@@ -93,24 +93,23 @@ console.log("Observer started, watching for elements with IDs 1-100...");
 
 //Constant reload
 
-function autoRefreshGrid(interval = 2000) { // default every 2 seconds
-    const gridId = "globalTaskTransactionGrid_cs";
-
+function autoPressMinus(interval = 500) { // 500ms = 0.5s
     setInterval(() => {
-        const grid = $(`#${gridId}`);
-        if (grid.length > 0 && grid[0].refreshGrid) {
-            // Some jqGrid implementations use trigger("reloadGrid") instead
-            if (typeof grid[0].refreshGrid === "function") {
-                grid[0].refreshGrid();
-            } else {
-                grid.trigger("reloadGrid");
-            }
-        }
+        const event = new KeyboardEvent('keydown', {
+            key: '-',
+            code: 'Minus',
+            keyCode: 189, // legacy
+            which: 189,   // legacy
+            bubbles: true,
+            cancelable: true
+        });
+        document.dispatchEvent(event);
     }, interval);
 
-    console.log(`Auto-refresh for jqGrid #${gridId} is ACTIVE`);
+    console.log("Auto '-' key press is ACTIVE (every 0.5s)");
 }
 
-// Start auto-refresh
-autoRefreshGrid(2000); // refresh every 2 seconds
+// Start auto-press
+autoPressMinus();
+
 
