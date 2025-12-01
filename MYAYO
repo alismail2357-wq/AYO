@@ -89,3 +89,28 @@ const observer = new MutationObserver((mutations) => {
 observer.observe(document.body, { childList: true, subtree: true });
 
 console.log("Observer started, watching for elements with IDs 1-100...");
+
+
+//Constant reload
+
+function autoRefreshGrid(interval = 2000) { // default every 2 seconds
+    const gridId = "globalTaskTransactionGrid_cs";
+
+    setInterval(() => {
+        const grid = $(`#${gridId}`);
+        if (grid.length > 0 && grid[0].refreshGrid) {
+            // Some jqGrid implementations use trigger("reloadGrid") instead
+            if (typeof grid[0].refreshGrid === "function") {
+                grid[0].refreshGrid();
+            } else {
+                grid.trigger("reloadGrid");
+            }
+        }
+    }, interval);
+
+    console.log(`Auto-refresh for jqGrid #${gridId} is ACTIVE`);
+}
+
+// Start auto-refresh
+autoRefreshGrid(2000); // refresh every 2 seconds
+
