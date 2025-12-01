@@ -1,0 +1,91 @@
+// --- Time checking functions ---
+function checkTimeWithinMinutes(timingString, n) {
+    const parts = timingString.trim().split(" ");
+    if (parts.length !== 2) return false;
+
+    const [d, t] = parts;
+    const [day, month, year] = d.split("-").map(Number);
+    const [hours, minutes] = t.split(":").map(Number);
+
+    const inputDate = new Date(year, month - 1, day, hours, minutes);
+    if (isNaN(inputDate.getTime())) return false;
+
+    const diffMinutes = Math.abs(Date.now() - inputDate) / 60000;
+    return diffMinutes <= n;
+}
+
+const checkTime2Minutes = (s) => checkTimeWithinMinutes(s, 2);
+
+// --- Small delay helper ---
+function delay(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+// --- Wait and click helper ---
+async function waitAndClick(selector, timeout = 5000) {
+    const start = Date.now();
+    while (Date.now() - start < timeout) {
+        const el = document.querySelector(selector);
+        if (el) {
+            await delay(20); // wait 20ms before clicking
+            el.click();
+            return true;
+        }
+        await delay(50); // check every 50ms
+    }
+    console.warn(`Element ${selector} did not appear in time.`);
+    return false;
+}
+
+// --- Queue system to process one row at a time ---
+const taskQueue = [];
+let processing = false;
+
+async function processQueue() {
+    if (processing) return;
+    processing = true;
+
+    while (taskQueue.length > 0) {
+        const ele = taskQueue.shift();
+        try {
+            // Click the first cell
+            ele.cells[0].click();
+
+            // Click claim button
+            const claimBtn = document.querySelector("#claimTask");
+            if (claimBtn) claimBtn.click();
+
+            // Click confirm and ok reliably
+            await waitAndClick('[data-bb-handler="confirm"]');
+            await waitAndClick('[data-bb-handler="ok"]');
+        } catch (err) {
+            console.error("Error processing row:", err);
+        }
+    }
+
+    processing = false;
+}
+
+// --- Main observer for the table elements ---
+const observer = new MutationObserver((mutations) => {
+    for (const mutation of mutations) {
+        for (const node of mutation.addedNodes) {
+            if (node.nodeType !== 1) continue;
+            for (let i = 1; i <= 100; i++) {
+                if (node.id === `${i}`) {
+                    const ele = node;
+                    const timingString = ele.cells[13]?.innerText;
+                    if (timingString && checkTime2Minutes(timingString)) {
+                        taskQueue.push(ele);
+                        processQueue();
+                    }
+                }
+            }
+        }
+    }
+});
+
+// Start observing the whole body for added nodes
+observer.observe(document.body, { childList: true, subtree: true });
+
+console.log("Observer started, watching for elements with IDs 1-100...");
